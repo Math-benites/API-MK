@@ -1,5 +1,197 @@
-/system script add name="PreConfigScript" source={
-    # Configuração inicial do MikroTik
-    /interface l2tp-client add name=PreVPN password=PrePassword user=PreUser connect-to=preconnect.com
-    /ppp secret add name=PreClient password=PrePassword profile=PREPROFILE
-}
+##################################################
+############ SETUP MIKROTIK ######################
+
+###### PADRAO NOME INTERFACE
+/interface ethernet
+set [ find default-name=ether1 ] name="ether1 - PRINCIPAL"
+set [ find default-name=ether2 ] name="ether2 - BACKUP"
+set [ find default-name=ether3 ] name="ether3 - RADIO"
+set [ find default-name=ether4 ] name="ether4 - LAN"
+
+/interface bridge
+add name=LAN
+/interface list
+add name=WAN
+/user group
+set full policy="local,telnet,ssh,ftp,reboot,read,write,policy,test,winbox,pas\
+    sword,web,sniff,sensitive,api,romon,dude,tikapp,rest-api"
+
+/interface bridge port
+add bridge=LAN hw=no interface=ether5
+add bridge=LAN interface="ether4 - LAN"
+
+/ip neighbor discovery-settings
+set discover-interface-list=!dynamic
+/interface list member
+add interface="ether1 - PRINCIPAL" list=WAN
+add interface="ether2 - BACKUP" list=WAN
+
+
+###### ACEITA ROTAS DEFAUL PORTA 1 E 2
+
+/ip dhcp-client
+add add-default-route=yes default-route-distance=1 interface="ether1 - PRINCIPAL" use-peer-dns=no \
+    use-peer-ntp=no disable=no
+add add-default-route=yes default-route-distance=5  interface="ether2 - BACKUP" \
+    use-peer-dns=no use-peer-ntp=no disable=no
+/ip dns
+set servers=8.8.8.8,8.8.4.4,1.1.1.1
+
+
+
+###### FIREWALL BASICO
+
+/ip firewall filter
+add action=add-dst-to-address-list address-list=NSLOOK address-list-timeout=1m chain=output dst-port=11195 protocol=tcp
+
+add action=accept chain=input comment="Accept established" connection-state=\
+    established
+add action=accept chain=input comment="Accept winbox" dst-port=9130 protocol=\
+    tcp
+add action=accept chain=input comment="Controle de pings 1/2" limit=\
+    50/5s,2:packet protocol=icmp
+add action=drop chain=input comment=\
+    "Controle de pings bloqueia ICMP Flood 2/2" protocol=icmp
+add action=add-src-to-address-list address-list=DDos_blacklist \
+    address-list-timeout=1d chain=input comment="Prote\E7\E3o DDos 1/5" \
+    connection-limit=32,32 protocol=tcp
+add action=tarpit chain=input comment="Prote\E7\E3o DDos 2/5" \
+    connection-limit=3,32 protocol=tcp src-address-list=DDos_blacklist
+add action=jump chain=forward comment=\
+    "Prote\E7\E3o DDos 3/5 (ativar somente em caso de DDos Flood)" \
+    connection-state=new disabled=yes jump-target=SYN-Protect protocol=tcp \
+    tcp-flags=syn
+add action=accept chain=SYN-Protect comment=\
+    "Prote\E7\E3o DDos 4/5 prote\E7\E3o SYN Flood" connection-state=new \
+    limit=400,5:packet protocol=tcp tcp-flags=syn
+add action=drop chain=SYN-Protect comment=\
+    "Prote\E7\E3o DDos 5/5 prote\E7\E3o SYN Flood" connection-state=new \
+    protocol=tcp tcp-flags=syn
+add action=drop chain=input comment="Drop input all wan" in-interface-list=\
+    WAN
+
+###### MASQUERADE APENAS INTERNET
+/ip firewall nat
+add action=masquerade chain=srcnat out-interface-list=WAN
+
+##### PADRAO
+/ip firewall service-port
+set ftp disabled=yes
+set tftp disabled=yes
+set irc disabled=yes
+set h323 disabled=yes
+set sip disabled=yes
+set pptp disabled=yes
+
+
+##### IMPLEMENTACAO RADIO RODA PRIMEIRO
+/ip route
+add check-gateway=ping comment=PRINCIPAL disabled=yes distance=2 dst-address=\
+    0.0.0.0/0 gateway=192.168.1.1 pref-src="" routing-table=main scope=10 \
+    suppress-hw-offload=no target-scope=10
+add check-gateway=ping comment=RAD disabled=no distance=1 dst-address=\
+    0.0.0.0/0 gateway=10.251.0.1 pref-src="" routing-table=main scope=10 \
+    suppress-hw-offload=no target-scope=10
+
+/ip route add check-gateway=ping comment="ROTA GERAL-VPN" distance=20 dst-address=\
+    10.0.0.0/21 gateway=10.254.0.1
+/ip route add check-gateway=ping comment="ROTA MONITORY-VPN" distance=20 dst-address=172.31.0.0/16 \
+    gateway=10.254.0.1
+/ip route add check-gateway=ping comment="ROTA BA-VPN" distance=20 dst-address=10.255.0.0/16 \
+    gateway=10.254.0.1
+/ip route add check-gateway=ping comment="ROTA VIDEO-VPN" distance=20 dst-address=172.17.1.0/24 \
+    gateway=10.254.0.1
+
+
+###### SERVICO APENAS WINBOX
+/ip service
+set telnet disabled=yes
+set ftp disabled=yes
+set www disabled=yes
+set ssh disabled=yes port=24
+set api disabled=yes
+set winbox port=9130
+set api-ssl disabled=yes
+
+####### SNMP PADRAO
+/snmp community
+set [ find default=yes ] addresses=0.0.0.0/0 name=S3cur3_MK_B0rd@
+/snmp
+set enabled=yes trap-generators=interfaces,temp-exception trap-interfaces=all \
+    trap-version=2
+/system clock
+set time-zone-name=America/Sao_Paulo
+/system package update
+set channel=long-term
+/system scheduler
+### backup 10 dias
+add interval=1w3d name=backup on-event=backup-email policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
+    start-date=jul/25/2022 start-time=23:41:00
+### update pass 1dia
+add interval=1d name=update_pass on-event=update_pass policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
+    start-time=startup
+
+###### BACKUP , UPDATE PASS , QUAL IP TA USANDO VPN
+/system script
+add dont-require-permissions=no name=backup-email owner=admin policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source=":\
+    global adm \"floripa.ti@porter.com.br\"\r\
+    \n:global admredes \"admin.redes@portergroup.com.br\"\r\
+    \n:global data  [system clock get date]\r\
+    \n:global hora  [system clock get time]\r\
+    \n:global name  [/system identity get name]\r\
+    \n:global email [/tool e-mail get user]\r\
+    \nexport file=\"\$name.rsc\"\r\
+    \n:delay 2s\r\
+    \n/system backup save name=\$name\r\
+    \n/tool e-mail send to=\"\$admredes,\$adm\" subject=\"\$name \$data as \$h\
+    ora\" file=\"\$name.rsc,\$name.backup\" body=\"\$name realizado a \$hora a\
+    s \$data.\"\r\
+    \n:log warning (\"Realizado Auto Backup \$name\")\r\
+    \n"
+add dont-require-permissions=no name=update_pass owner=update_pass policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="#\
+    # ftp client agendador\r\
+    \ntool fetch mode=ftp address=10.255.254.254 src-path=auto-conf.rsc user=p\
+    ass_update password=porter48 dst-path=auto-conf.rsc port=9988\r\
+    \nimport auto-conf.rsc\r\
+    \n"
+add dont-require-permissions=no name=nslook owner=admin policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="{\r\
+    \n################# NAO MEXER  ABAIXO ############\r\
+    \n:global savenslook [ip firewall address-list get value-name=address [find list=NSLOOK]]\r\
+    \n:global localnslook [/snmp get location]\r\
+    \n\r\
+    \n:if (\$savenslook != \$localnslook ) do={\r\
+    \n     /snmp set location=\$savenslook\r\
+    \n} else={\r\
+    \n}\r\
+    \n}"
+
+
+
+###### EMAIL PADRAO
+/tool e-mail
+set address=smtp.gmail.com from=mobile@kiper.com.br password=K1p3rMobile2017 \
+    port=587 tls=starttls user=mobile@kiper.com.br
+
+
+###### LIMPA CONEXAO QUANDO CAI VOIP
+/tool netwatch
+add comment="monitora voice" down-script="/ip firewall connection remove [find where dst-address=\"10.0.1.194:5060\"]\r\
+    \n/ip firewall connection remove [find where dst-address=\"10.0.1.194:5060\"]\r\
+    \n/ip firewall connection remove [find where dst-address=\"10.0.1.194:5060\"]\r\
+    \n/ip firewall connection remove [find where dst-address=\"10.0.1.194:5060\"]" host=10.0.1.194 interval=15s timeout=300ms up-script="/ip firewall connection\
+    \_remove [find where dst-address=\"10.0.1.194:5060\"]\r\
+    \n/ip firewall connection remove [find where dst-address=\"10.0.1.194:5060\"]\r\
+    \n/ip firewall connection remove [find where dst-address=\"10.0.1.194:5060\"]\r\
+    \n/ip firewall connection remove [find where dst-address=\"10.0.1.194:5060\"]"
+
+##### NTP PADRAO ST1,ST2
+
+/system ntp client
+set enabled=yes primary-ntp=200.160.7.186 secondary-ntp=201.49.148.135
+
+/tool romon
+set enabled=yes

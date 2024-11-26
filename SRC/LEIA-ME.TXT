@@ -1,0 +1,17 @@
+//CONFIGURACAO 
+EDITE config.ini
+
+
+
+
+
+
+
+//PARA BUILDAR NOVAMENTE
+
+docker build -t mikrotik .
+
+
+//PARA INICIAR 
+docker run -d -p 5000:5000 mikrotik
+

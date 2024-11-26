@@ -44,31 +44,35 @@ def generate_password(length=16):
     return password
 
 
+# Gerar a senha
+out_password = generate_password()
+
+# Defina o IP de conexão para a VPN
+out_connect_to = "fln.ti.kiper.tec.br"
+
+# Rota para enviar o comando
 @app.route('/send_command', methods=['POST'])
 def send_command():
     host = MIKROTIK_HOST
     username = request.form['username']
     password = request.form['password']
     name = request.form['name']
-    routes = request.form['routes']  # Captura o valor de "routes" enviado no formulário
-    
-    # Gerar uma nova senha a cada envio de comando
-    out_password = generate_password()  # Gera a senha aqui, cada vez que o formulário for enviado
+    routes = request.form['routes']
 
-    # Comando a ser enviado via SSH, agora com o valor de routes
-    command = f"ppp secret add name={name} password={out_password} profile=CLIENTES routes={routes}"
+    # Usando a senha gerada para o comando
+    command = f"/ppp/secret/add name={name} password={out_password} profile=CLIENTES routes={routes}"
     vpn_command = f"/interface l2tp-client add allow=chap,mschap1,mschap2 comment=vpn1 connect-to={out_connect_to} disabled=no name=LVPN1 password={out_password} user={name}"
-    
+
     result = execute_ssh_command(host, username, password, command)
     result_vpn = execute_ssh_command(host, username, password, vpn_command)
-    
+
     if "Erro" in result or "Exception" in result or "Erro" in result_vpn:
         flash(f"Falha ao enviar comando: {result} | {result_vpn}", "error")
         script = None
         command_status = "Falha ao enviar o comando."
     else:
         flash("Comando enviado com sucesso!", "success")
-        script = generate_script(name)  # Gera o script com o nome do cliente
+        script = generate_script(name, out_password)  # Passa a senha gerada para o script
         command_status = f"Comando enviado para {host} com sucesso!"
 
     return render_template(
@@ -78,15 +82,15 @@ def send_command():
         command_status=command_status
     )
 
-
-# Função para gerar o script com base no nome do cliente
-def generate_script(uservpn):
+# Função para gerar o script com a senha correta
+def generate_script(uservpn, password):
     try:
         # Carrega o template do arquivo
         with open('script_template.txt', 'r') as file:
             template = file.read()
-        # Substitui o placeholder pelo nome do cliente e outras variáveis
-        return template.replace("{uservpn}", uservpn).replace("{out_password}", out_password).replace("{out_connect_to}", out_connect_to)
+        # Substitui o placeholder pelo nome do cliente e pela senha gerada
+        script = template.replace("{uservpn}", uservpn).replace("{password}", password)
+        return script
     except FileNotFoundError:
         return "Erro: Arquivo de template não encontrado."
 
