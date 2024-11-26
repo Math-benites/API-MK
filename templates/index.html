@@ -1,41 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MikroTik SSH Command</title>
-    <!-- Vincula o arquivo CSS externo -->
-    <link rel="stylesheet" href="static/css/style.css">  <!-- ou 'static/css/style.css' se estiver em pasta separada -->
+    <link rel="stylesheet" href="static/css/style.css">
 </head>
 <body>
-    <div class="container">
-        <form method="POST" action="/send_command">
-            <h2>Mikrotik Cloud Config</h2>
-            
-            <label for="username">Usuário:</label>
-            <input type="text" id="username" name="username" required>
-            
-            <label for="password">Senha:</label>
-            <input type="password" id="password" name="password" required>
-            
-            <label for="name">Nome do Cliente:</label>
-            <input type="text" id="name" name="name" required>
-            
-            <label for="routes">Routes:</label>
-            <input type="text" id="routes" name="routes" placeholder="Exemplo: 10.0.0.0/8" required>
-            
-            <button type="submit">Enviar Comando</button>
-        </form>
-        
-        <div class="script-box">
-            <h2>Script Output</h2>
-            {% if script %}
-                <textarea id="script-text" readonly>{{ script }}</textarea>
-                <button class="copy-btn" onclick="copyToClipboard()">Copiar Script</button>
-            {% else %}
-                <p>...</p>
-            {% endif %}
+<!-- Barra de Menu Lateral -->
+<div id="sideMenu" class="side-menu">
+    <a href="javascript:void(0)" class="close-btn" onclick="closeNav()">&times;</a>
+    <a href="#">Início</a>
+    <a href="#">VPN Cloud</a>  <!-- Mudança de "Comandos" para "VPN Cloud" -->
+    <a href="#">Scripts</a>
+    <a href="#">Configurações</a>
+    <a href="#">Ajuda</a>
+</div>
+
+    <!-- Botão para abrir o menu -->
+    <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; Menu</span>
+
+    <!-- Conteúdo principal -->
+    <div id="main-content">
+        <div class="container">
+            <!-- Formulário para a configuração do MikroTik -->
+            <div class="form-container">
+                <h2>Mikrotik Cloud Config</h2>
+                <form method="POST" action="/send_command">
+                    <label for="username">Usuário:</label>
+                    <input type="text" id="username" name="username" required>
+                    
+                    <label for="password">Senha:</label>
+                    <input type="password" id="password" name="password" required>
+                    
+                    <label for="name">Nome do Cliente:</label>
+                    <input type="text" id="name" name="name" required>
+                    
+                    <label for="routes">Routes:</label>
+                    <input type="text" id="routes" name="routes" placeholder="10.0.0.0/8" required>
+                    
+                    <button type="submit">Enviar Comando</button>
+                </form>
+            </div>
+
+            <!-- Exibição do script gerado ou carregado -->
+            <div class="script-box">
+                <h2>Script Output</h2>
+                {% if script %}
+                    <textarea id="script-text" readonly>{{ script }}</textarea>
+                    <button class="copy-btn" onclick="copyToClipboard()">Copiar Script</button>
+                {% else %}
+                    <p>...</p>
+                {% endif %}
+                <textarea id="pre-config-script" readonly></textarea>
+                <button onclick="loadPreConfigScript()">PRE-CONFIG</button>
+            </div>
         </div>
     </div>
-    
+
     {% if command_status %}
     <div class="status-box">
         {{ command_status }}
@@ -43,6 +65,18 @@
     {% endif %}
 
     <script>
+        // Função para abrir o menu lateral
+        function openNav() {
+            document.getElementById("sideMenu").style.width = "250px"; // Exibe o menu
+            document.getElementById("main-content").style.marginLeft = "250px"; // Empurra o conteúdo principal
+        }
+
+        // Função para fechar o menu lateral
+        function closeNav() {
+            document.getElementById("sideMenu").style.width = "0"; // Esconde o menu
+            document.getElementById("main-content").style.marginLeft = "0"; // Restaura o conteúdo principal
+        }
+
         // Função para copiar o conteúdo da textarea para a área de transferência
         function copyToClipboard() {
             var copyText = document.getElementById("script-text");
@@ -50,6 +84,16 @@
             copyText.setSelectionRange(0, 99999); // Para dispositivos móveis
             document.execCommand("copy");
             alert("Script copiado para a área de transferência!");
+        }
+
+        // Função para carregar o script pré-configurado
+        function loadPreConfigScript() {
+            fetch('/load_pre_config')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('pre-config-script').value = data;
+                })
+                .catch(error => console.error('Erro ao carregar o script pré-configurado:', error));
         }
     </script>
 </body>

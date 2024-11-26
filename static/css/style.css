@@ -9,22 +9,22 @@ body {
     align-items: center;
 }
 
+/* Container principal */
 .container {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    justify-content: space-between;
     gap: 20px;
-    max-width: 1000px;
+    margin-top: 20px;
 }
 
-form {
-    background: #ffffff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    max-width: 500px;
-    width: 100%;
+
+/* Estilo do formulário */
+.form-container {
     flex: 1;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
 }
 
 input {
@@ -63,18 +63,53 @@ button:hover {
 }
 
 .script-box {
-    background: #ffffff;
+    flex: 1;
     padding: 15px;
+    border: 1px solid #ddd;
     border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    width: 400px;  /* Definindo largura fixa */
-    height: 300px;  /* Definindo altura fixa */
-    overflow: auto; /* Caso o conteúdo ultrapasse, mostra barra de rolagem */
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    background-color: #f9f9f9;
 }
 
+/* Layout responsivo para telas menores */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;  /* Empilha os elementos em telas pequenas */
+    }
+
+    .form-container, .script-box {
+        width: 100%; /* Ajusta a largura para 100% em telas pequenas */
+    }
+}
+
+
+button {
+    background-color: #514ab6;
+    color: white;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    margin-top: 10px;
+    width: 100%;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+.copy-btn {
+    width: 100%;
+    background-color: #f44336;
+    color: white;
+    margin-top: 10px;
+}
+
+textarea {
+    width: 100%;
+    height: 150px;
+    resize: none;
+    margin-top: 10px;
+}
 
 .copy-btn {
     background: #28a745;
@@ -91,4 +126,60 @@ button:hover {
 
 .copy-btn:hover {
     background-color: #218838;
+}
+/* Estilo para a barra lateral */
+.side-menu {
+    height: 100%; /* A altura da barra lateral será 100% da tela */
+    width: 0; /* Inicialmente a largura do menu é 0 (escondido) */
+    position: fixed; /* Fica fixo à esquerda */
+    z-index: 1; /* Fica acima do conteúdo */
+    top: 0;
+    left: 0;
+    background-color: #111;
+    overflow-x: hidden; /* Desativa a rolagem horizontal */
+    padding-top: 60px;
+    transition: 0.5s; /* Transição suave para abrir e fechar */
+}
+
+.side-menu a {
+    padding: 8px 8px 8px 32px;
+    text-decoration: none;
+    font-size: 25px;
+    color: #818181;
+    display: block;
+    transition: 0.3s;
+}
+
+.side-menu a:hover {
+    color: #f1f1f1;
+}
+
+.side-menu .close-btn {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+    margin-left: 50px;
+}
+
+/* Estilo para o conteúdo principal quando o menu está aberto */
+#main-content {
+    transition: margin-left 0.5s; /* Transição suave para o conteúdo */
+    padding: 15px;
+}
+
+/* Estilo para o botão de "Menu" fixo na lateral esquerda */
+span {
+    font-size: 30px;
+    cursor: pointer;
+    color: #111;
+    padding: 10px;
+    position: fixed; /* Fixa o ícone do menu na lateral esquerda */
+    top: 20px; /* Distância do topo */
+    left: 20px; /* Distância da lateral esquerda */
+    z-index: 2; /* Garante que o ícone fique acima do conteúdo */
+}
+
+script-box {
+    margin-top: 20px;
 }

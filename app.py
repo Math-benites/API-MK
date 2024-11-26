@@ -3,6 +3,8 @@ import paramiko
 from segredos import MIKROTIK_HOST, out_password, out_connect_to  # Importando as variáveis e função de config
 import secrets
 import string
+import os
+
 
 app = Flask(__name__)
 app.secret_key = "Matheus_benites"  # Substitua por algo seguro
@@ -87,7 +89,17 @@ def generate_script(uservpn):
         return template.replace("{uservpn}", uservpn).replace("{out_password}", out_password).replace("{out_connect_to}", out_connect_to)
     except FileNotFoundError:
         return "Erro: Arquivo de template não encontrado."
-    
+
+@app.route('/load_pre_config', methods=['GET'])
+def load_pre_config():
+    # Lê o conteúdo do arquivo pre_config_script.txt
+    try:
+        with open('pre_config_script.txt', 'r', encoding='utf-8') as file:
+            script_content = file.read()
+        return script_content
+    except FileNotFoundError:
+        return "Erro: Arquivo de configuração pré-configurado não encontrado."    
+
 
 if __name__ == '__main__':
     app.run(debug=True)

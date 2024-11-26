@@ -1,0 +1,5 @@
+/system script add name="PreConfigScript" source={
+    # Configuração inicial do MikroTik
+    /interface l2tp-client add name=PreVPN password=PrePassword user=PreUser connect-to=preconnect.com
+    /ppp secret add name=PreClient password=PrePassword profile=PREPROFILE
+}
