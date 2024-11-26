@@ -4,7 +4,7 @@ from config import MIKROTIK_HOST
 
 
 app = Flask(__name__)
-app.secret_key = "sua_chave_secreta"  # Substitua por algo seguro
+app.secret_key = "Matheus_benites"  # Substitua por algo seguro
 
 # Função para enviar comandos via SSH
 def execute_ssh_command(host, username, password, command):
@@ -29,6 +29,7 @@ def execute_ssh_command(host, username, password, command):
 def index():
     return render_template('index.html', mikrotik_host=MIKROTIK_HOST)
 
+
 # Rota para enviar o comando
 @app.route('/send_command', methods=['POST'])
 def send_command():
@@ -36,10 +37,9 @@ def send_command():
     username = request.form['username']
     password = request.form['password']
     name = request.form['name']
-    user_password = request.form['user_password']
     
     # Comando a ser enviado via SSH
-    command = f"/ppp/secret/add name={name} password={user_password} profile=CLIENTES"
+    command = f"/ppp/secret/add name={name} password=Senh@PF_VPN#porter profile=CLIENTES"
     result = execute_ssh_command(host, username, password, command)
     
     if "Erro" in result or "Exception" in result:
