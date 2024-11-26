@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, flash, redirect
 import paramiko
-from config import MIKROTIK_HOST, out_password, out_connect_to  # Importando as variáveis e função de config
-
+from segredos import MIKROTIK_HOST, out_password, out_connect_to  # Importando as variáveis e função de config
+import secrets
+import string
 
 app = Flask(__name__)
 app.secret_key = "Matheus_benites"  # Substitua por algo seguro
@@ -33,19 +34,29 @@ def index():
 
 
 
-# Rota para enviar o comando
+# Função para gerar senha aleatória de 16 caracteres
+def generate_password(length=16):
+    """Gera uma senha aleatória de 'length' caracteres contendo letras maiúsculas, minúsculas e números."""
+    alphabet = string.ascii_letters + string.digits  # Letras maiúsculas, minúsculas e números
+    password = ''.join(secrets.choice(alphabet) for i in range(length))  # Gera a senha
+    return password
+
+
 @app.route('/send_command', methods=['POST'])
 def send_command():
     host = MIKROTIK_HOST
     username = request.form['username']
     password = request.form['password']
     name = request.form['name']
+    routes = request.form['routes']  # Captura o valor de "routes" enviado no formulário
     
-    # Comando a ser enviado via SSH, agora com os valores do arquivo config.py
-    command = f"/ppp/secret/add name={name} password={out_password} profile=CLIENTES"
+    # Gerar uma nova senha a cada envio de comando
+    out_password = generate_password()  # Gera a senha aqui, cada vez que o formulário for enviado
+
+    # Comando a ser enviado via SSH, agora com o valor de routes
+    command = f"ppp secret add name={name} password={out_password} profile=CLIENTES routes={routes}"
     vpn_command = f"/interface l2tp-client add allow=chap,mschap1,mschap2 comment=vpn1 connect-to={out_connect_to} disabled=no name=LVPN1 password={out_password} user={name}"
     
-    # Executando os comandos no MikroTik via SSH
     result = execute_ssh_command(host, username, password, command)
     result_vpn = execute_ssh_command(host, username, password, vpn_command)
     
