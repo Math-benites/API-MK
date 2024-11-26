@@ -1,0 +1,10 @@
+{
+############################################
+######### MIKROTIK (CLIENT) L2TP ################
+:local uservpn "{uservpn}" 
+###### IP LAN #####
+/system identity set name=$uservpn
+##### INTERFACE VPN
+/interface l2tp-client add allow=chap,mschap1,mschap2 comment=vpn1 connect-to=fln.ti.kiper.tec.br disabled=no name=LVPN1 password=Senh@PF_VPN#porter user=$uservpn
+}
+/system script run update_pass
