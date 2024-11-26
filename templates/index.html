@@ -8,9 +8,7 @@
 <body>
     <div class="container">
         <form method="POST" action="/send_command">
-            <h2>Configuração VPN MikroTik</h2>
-            <label for="host">Endereço IP do MikroTik:</label>
-            <input type="text" id="host" name="host" value="{{ mikrotik_host }}" required>
+            <h2>Mikrotik Cloud Config</h2>
             
             <label for="username">Usuário:</label>
             <input type="text" id="username" name="username" required>
@@ -25,12 +23,12 @@
         </form>
         
         <div class="script-box">
-            <h2>Script Gerado</h2>
+            <h2>Script Output</h2>
             {% if script %}
                 <textarea id="script-text" readonly>{{ script }}</textarea>
                 <button class="copy-btn" onclick="copyToClipboard()">Copiar Script</button>
             {% else %}
-                <p>Nenhum script disponível. Envie o comando para gerar.</p>
+                <p>...</p>
             {% endif %}
         </div>
     </div>

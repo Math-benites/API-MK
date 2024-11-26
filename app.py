@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, flash, redirect
 import paramiko
-from config import MIKROTIK_HOST
+from config import MIKROTIK_HOST, out_password, out_connect_to  # Importando as variáveis e função de config
 
 
 app = Flask(__name__)
 app.secret_key = "Matheus_benites"  # Substitua por algo seguro
+
 
 # Função para enviar comandos via SSH
 def execute_ssh_command(host, username, password, command):
@@ -24,26 +25,32 @@ def execute_ssh_command(host, username, password, command):
     except Exception as e:
         return f"Erro na conexão: {str(e)}"
 
+
 # Rota para exibir o formulário
 @app.route('/')
 def index():
     return render_template('index.html', mikrotik_host=MIKROTIK_HOST)
 
 
+
 # Rota para enviar o comando
 @app.route('/send_command', methods=['POST'])
 def send_command():
-    host = request.form['host']
+    host = MIKROTIK_HOST
     username = request.form['username']
     password = request.form['password']
     name = request.form['name']
     
-    # Comando a ser enviado via SSH
-    command = f"/ppp/secret/add name={name} password=Senh@PF_VPN#porter profile=CLIENTES"
-    result = execute_ssh_command(host, username, password, command)
+    # Comando a ser enviado via SSH, agora com os valores do arquivo config.py
+    command = f"/ppp/secret/add name={name} password={out_password} profile=CLIENTES"
+    vpn_command = f"/interface l2tp-client add allow=chap,mschap1,mschap2 comment=vpn1 connect-to={out_connect_to} disabled=no name=LVPN1 password={out_password} user={name}"
     
-    if "Erro" in result or "Exception" in result:
-        flash(f"Falha ao enviar comando: {result}", "error")
+    # Executando os comandos no MikroTik via SSH
+    result = execute_ssh_command(host, username, password, command)
+    result_vpn = execute_ssh_command(host, username, password, vpn_command)
+    
+    if "Erro" in result or "Exception" in result or "Erro" in result_vpn:
+        flash(f"Falha ao enviar comando: {result} | {result_vpn}", "error")
         script = None
         command_status = "Falha ao enviar o comando."
     else:
@@ -59,17 +66,17 @@ def send_command():
     )
 
 
-
+# Função para gerar o script com base no nome do cliente
 def generate_script(uservpn):
     try:
         # Carrega o template do arquivo
         with open('script_template.txt', 'r') as file:
             template = file.read()
-        # Substitui o placeholder pelo nome do cliente
-        return template.replace("{uservpn}", uservpn)
+        # Substitui o placeholder pelo nome do cliente e outras variáveis
+        return template.replace("{uservpn}", uservpn).replace("{out_password}", out_password).replace("{out_connect_to}", out_connect_to)
     except FileNotFoundError:
         return "Erro: Arquivo de template não encontrado."
-
+    
 
 if __name__ == '__main__':
     app.run(debug=True)
