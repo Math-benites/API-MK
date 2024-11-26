@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MikroTik SSH Command</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        form {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            margin: 20px auto;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px; /* Adiciona espaço entre os campos */
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Garante que o preenchimento não afete o tamanho total */
+        }
+        button {
+            background: #007bff;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .flash {
+            margin: 10px auto;
+            max-width: 400px;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .flash.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .flash.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="flash {{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="/send_command">
+        <h2>Configuração VPN MikroTik</h2>
+        <label for="host">Endereço IP do MikroTik:</label>
+        <input type="text" id="host" name="host" required>
+        
+        <label for="username">Usuário:</label>
+        <input type="text" id="username" name="username" required>
+        
+        <label for="password">Senha:</label>
+        <input type="password" id="password" name="password" required>
+        
+        <label for="name">Nome do Cliente:</label>
+        <input type="text" id="name" name="name" required>
+        
+        <label for="user_password">Senha do Cliente:</label>
+        <input type="password" id="user_password" name="user_password" required>
+        
+        <button type="submit">Enviar Comando</button>
+    </form>
+</body>
+</html>
